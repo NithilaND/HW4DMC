@@ -1,0 +1,9 @@
+Q1: FoundationDB separates transaction management from storage so they can scale and recover independently. The Transaction Management System handles read and commit versions, conflict checking, and deciding whether transactions commit. The Storage System stores the key-value data, serves reads, and applies committed updates.
+
+Q2: The Resolver checks for read-write conflicts during the commit process. It compares the transaction's read-conflict ranges against writes committed since its read version before the transaction is allowed to commit.
+
+Q3: The read version determines which snapshot of the database a transaction reads. This means its reads reflect one logical point in time, even if other transactions are writing at the same time. Together with commit ordering and conflict checks, this supports FoundationDB's consistency guarantees.
+
+Q4: A standard read adds the keys or ranges it reads to the transaction's read-conflict set, so a conflicting write can cause the transaction to be retried. A snapshot read does not add those read-conflict ranges, which reduces conflicts but means the transaction cannot rely on that read for a conflict-checked decision. I'd use snapshot reads for information that doesn't determine whether my transaction is safe to commit.
+
+Q5: During normal operation, LogServers record committed mutations, and StorageServers pull and apply those mutations while serving data. Since storage is already being updated as the system runs, recovery doesn't have to replay an entire redo log before it can make progress. The system can recover its configuration and resume service while StorageServers catch up from the logs.
